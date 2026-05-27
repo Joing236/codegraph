@@ -93,6 +93,7 @@ export const LANGUAGES = [
   'xml',
   'properties',
   'unknown',
+  'gdscript',
 ] as const;
 
 export type Language = (typeof LANGUAGES)[number];
