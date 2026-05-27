@@ -1,0 +1,68 @@
+/**
+ * Import Resolver
+ *
+ * Resolves import paths to actual files and symbols.
+ */
+import { Language } from '../types';
+import { UnresolvedRef, ResolvedRef, ResolutionContext, ImportMapping, ReExport } from './types';
+/**
+ * Resolve an import path to an actual file
+ */
+export declare function resolveImportPath(importPath: string, fromFile: string, language: Language, context: ResolutionContext): string | null;
+/**
+ * Clear the C/C++ include directory cache (call between indexing runs)
+ */
+export declare function clearCppIncludeDirCache(): void;
+/**
+ * Discover C/C++ include search directories for a project.
+ *
+ * Strategy:
+ * 1. Look for compile_commands.json (Clang compilation database) in the
+ *    project root and common build subdirectories. Parse -I and -isystem
+ *    flags from compiler commands.
+ * 2. If no compilation database is found, probe for common convention
+ *    directories (include/, src/, lib/, api/) and top-level directories
+ *    containing .h/.hpp files.
+ *
+ * Returns paths relative to projectRoot.
+ */
+export declare function loadCppIncludeDirs(projectRoot: string): string[];
+/**
+ * Extract import mappings from a file
+ */
+export declare function extractImportMappings(_filePath: string, content: string, language: Language): ImportMapping[];
+/**
+ * Clear the import mapping cache (call between indexing runs)
+ */
+export declare function clearImportMappingCache(): void;
+/**
+ * Extract JS/TS re-export declarations from `content`.
+ *
+ * Recognised forms:
+ *   export { foo } from './a';
+ *   export { foo as bar } from './a';
+ *   export * from './a';
+ *   export * as ns from './a';   (treated as wildcard for chasing)
+ *   export { default as Foo } from './a';
+ *
+ * The walker intentionally stays regex-based — the import-resolver
+ * elsewhere in this file already chooses regex over a fresh
+ * tree-sitter pass, and this function shares that trade-off. Errors
+ * fall through silently; resolution simply skips the broken file.
+ */
+export declare function extractReExports(content: string, language: Language): ReExport[];
+/**
+ * Resolve a reference using import mappings
+ */
+/**
+ * JVM (Java / Kotlin) imports use fully-qualified names (`import
+ * com.example.foo.Bar`) decoupled from filenames, so the JS/Python
+ * style filesystem path lookup misses them whenever the file isn't
+ * named after its primary symbol (Kotlin `Utils.kt` exporting `Bar`,
+ * top-level fns, extension fns). Resolve them through the
+ * `qualifiedName` index instead — populated by the package_header /
+ * package_declaration namespace wrappers in the extractor.
+ */
+export declare function resolveJvmImport(ref: UnresolvedRef, context: ResolutionContext): ResolvedRef | null;
+export declare function resolveViaImport(ref: UnresolvedRef, context: ResolutionContext): ResolvedRef | null;
+//# sourceMappingURL=import-resolver.d.ts.map

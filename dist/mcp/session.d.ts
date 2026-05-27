@@ -1,0 +1,67 @@
+/**
+ * MCP per-connection session — speaks the JSON-RPC protocol (initialize,
+ * tools/list, tools/call) over a single {@link JsonRpcTransport}. It owns
+ * per-client state only (which protocol version the client asked for, whether
+ * it advertised `roots`, the one-shot roots/list latch); the heavyweight
+ * resources (CodeGraph, watcher, ToolHandler) live in the shared
+ * {@link MCPEngine} so daemon mode can collapse N inotify sets / DB handles
+ * to one.
+ *
+ * The state-machine itself mirrors what `MCPServer` used to do inline before
+ * issue #411 split it out — the same regression tests in
+ * `__tests__/mcp-initialize.test.ts` still drive this code path.
+ */
+import { JsonRpcTransport } from './transport';
+import { MCPEngine } from './engine';
+export interface MCPSessionOptions {
+    /**
+     * Explicit project path from the `--path` CLI flag. When set, the session
+     * will not bother asking the client for `roots/list` — we already know
+     * where the project lives.
+     */
+    explicitProjectPath?: string | null;
+}
+/**
+ * One MCP client's view of the server. Created fresh per stdio launch
+ * (direct mode) or per socket connection (daemon mode).
+ */
+export declare class MCPSession {
+    private transport;
+    private engine;
+    private clientSupportsRoots;
+    private rootsAttempted;
+    private resolvePromise;
+    private explicitProjectPath;
+    constructor(transport: JsonRpcTransport, engine: MCPEngine, opts?: MCPSessionOptions);
+    /**
+     * Start handling messages from the transport. Returns immediately — the
+     * session lives for as long as the transport is open.
+     */
+    start(): void;
+    /**
+     * Tear down the session. Does NOT touch the engine (the engine may serve
+     * other sessions) or call `process.exit` (the daemon decides when to exit).
+     */
+    stop(): void;
+    /** Underlying transport — exposed for daemon-side close hooks. */
+    getTransport(): JsonRpcTransport;
+    private handleMessage;
+    private handleInitialize;
+    private handleToolsList;
+    private handleToolsCall;
+    /**
+     * Lazy default-project resolution. Three layers:
+     *   1. await the in-flight init kicked off from `handleInitialize` (if any);
+     *   2. if still uninitialized and we never asked the client for its roots,
+     *      do so now (one-shot); fall back to cwd if the client lacks roots;
+     *   3. last-resort: re-walk from the best candidate — picks up projects
+     *      that were `codegraph init`'d *after* the server started.
+     */
+    private retryInitIfNeeded;
+    /**
+     * Ask the client for its workspace root via `roots/list` and open the
+     * first one. Falls back to `process.cwd()` on timeout or empty answer.
+     */
+    private initFromRoots;
+}
+//# sourceMappingURL=session.d.ts.map
